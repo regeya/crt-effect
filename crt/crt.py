@@ -43,14 +43,20 @@ void main() {
     }
 
     float texel_x = 1.0 / SourceSize.x; 
+    float texel_y = 1.0 / SourceSize.y; 
 
-    // 2. Fetch native RGB vectors directly from Pygame surface texture
+    // 2. Fetch native RGB vectors (Center + Cross Pattern Neighbors)
     vec3 col       = texture(tex, uv).rgb;
     vec3 left_col  = texture(tex, uv - vec2(texel_x * BLUR_OFFSET, 0.0)).rgb;
     vec3 right_col = texture(tex, uv + vec2(texel_x * BLUR_OFFSET, 0.0)).rgb;
+    vec3 up_col    = texture(tex, uv - vec2(0.0, texel_y * BLUR_OFFSET)).rgb;
+    vec3 down_col  = texture(tex, uv + vec2(0.0, texel_y * BLUR_OFFSET)).rgb;
 
-    // Horizontal phosphors bleeding blur simulation
-    col = (col * 0.5) + (left_col * 0.25) + (right_col * 0.25);
+    // Symmetric 5-tap cross blur filter
+    // Center gets ~33.4% weight, surrounding directions split the remaining ~66.6%
+    col = (col * 0.334) + 
+          (left_col * 0.1665) + (right_col * 0.1665) + 
+          (up_col * 0.1665)   + (down_col * 0.1665);
     
     // Linearize colorspace
     col = pow(col, vec3(INPUT_GAMMA));
